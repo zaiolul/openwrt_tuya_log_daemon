@@ -1,6 +1,6 @@
 local cjson = require "cjson"
 local ubus = require "ubus"
-
+Timer = 5
 local function makeJsonString(key, val)
     local tb = {}
     tb[key] = {value = val};

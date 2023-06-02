@@ -3,6 +3,7 @@
 #include "tuyalink_core.h"
 #include "tuya_error_code.h"
 
+#define TUYA_TIMEOUT 2000 //miliseconds
 /*calls when messages are sent and received*/
 void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg);
 /*initialises mqtt client and connects to cloud*/

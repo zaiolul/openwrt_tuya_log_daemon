@@ -62,7 +62,7 @@ int tuya_init(char *device_id, char *secret)
         .device_id = device_id,
         .device_secret = secret,
         .keepalive = 100,
-        .timeout_ms = 3000,
+        .timeout_ms = TUYA_TIMEOUT,
         .on_connected = NULL,
         .on_disconnect = NULL,
         .on_messages = on_messages
