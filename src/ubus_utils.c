@@ -1,18 +1,16 @@
-
 #include <syslog.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <libubox/blobmsg_json.h>
-#include <libubus.h>
 #include "utils.h"
 #include "tuya_utils.h"
+#include "ubus_utils.h"
 
 struct ubus_context *ctx;
 
-enum {
-    UPTIME_VALUE,
-    UPTIME_MAX
-};
+// enum {
+//     UPTIME_VALUE,
+//     UPTIME_MAX
+// };
 enum{
     DEVICE_NAME,
     DEVICE_PORT,
@@ -32,9 +30,9 @@ enum {
 };
 
 
-static const struct blobmsg_policy info_policy[UPTIME_MAX] = {
-	[UPTIME_VALUE] = { .name = "uptime", .type = BLOBMSG_TYPE_INT32},
-};
+// static const struct blobmsg_policy info_policy[UPTIME_MAX] = {
+// 	[UPTIME_VALUE] = { .name = "uptime", .type = BLOBMSG_TYPE_INT32},
+// };
 
 static const struct blobmsg_policy device_data_policy[DEVICE_MAX] = {
     [DEVICE_NAME] = { .name = "esp_name", .type = BLOBMSG_TYPE_STRING},
@@ -52,17 +50,17 @@ static const struct blobmsg_policy control_policy[CONTROL_MAX] = {
     [CONTROL_MESSAGE] = {.name = "msg", .type = BLOBMSG_TYPE_STRING}
 };
 
-void uptime_cb(struct ubus_request *req, int type, struct blob_attr *msg)
-{
-	struct blob_attr *tb[UPTIME_MAX];
-    int *uptime_value = (int*)req->priv;
-	blobmsg_parse(info_policy, UPTIME_MAX, tb, blob_data(msg), blob_len(msg));
+// void uptime_cb(struct ubus_request *req, int type, struct blob_attr *msg)
+// {
+// 	struct blob_attr *tb[UPTIME_MAX];
+//     int *uptime_value = (int*)req->priv;
+// 	blobmsg_parse(info_policy, UPTIME_MAX, tb, blob_data(msg), blob_len(msg));
 
-	if (!tb[UPTIME_VALUE]) {
-		return;
-	}
-    *uptime_value = blobmsg_get_u32(tb[UPTIME_VALUE]);
-}
+// 	if (!tb[UPTIME_VALUE]) {
+// 		return;
+// 	}
+//     *uptime_value = blobmsg_get_u32(tb[UPTIME_VALUE]);
+// }
 
 void devices_cb(struct ubus_request *req, int type, struct blob_attr *msg)
 {
@@ -196,20 +194,6 @@ int change_gpio_state(cJSON *input)
         response.code, response.message);
     ret = send_report(full_message);
 
-    return ret;
-}
-
-int report_uptime_data()
-{
-    int uptime = 0;
-    int ret;
-    if((ret = invoke_method("system", "info", NULL, uptime_cb, &uptime)) != 0){
-        return ret;
-    }
-
-    char full_message[1024];
-    sprintf(full_message, "{\"uptime\":\"{\\\"value\\\":%d}\"}", uptime);
-    ret = send_report(full_message);
     return ret;
 }
 

@@ -1,3 +1,5 @@
+#ifndef TUYA_CACERT_H
+#define TUYA_CACERT_H
 
 const char tuya_cacert_pem[] = {\
 "-----BEGIN CERTIFICATE-----\n"\
@@ -23,3 +25,5 @@ const char tuya_cacert_pem[] = {\
 "LPAvTK33sefOT6jEm0pUBsV/fdUID+Ic/n4XuKxe9tQWskMJDE32p2u0mYRlynqI\n"\
 "4uJEvlz36hz1\n"\
 "-----END CERTIFICATE-----\n"};
+
+#endif

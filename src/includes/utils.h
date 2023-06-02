@@ -1,9 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
 #include <argp.h>
-#include <tuyalink_core.h>
-#include <libubox/blobmsg_json.h>
-#include <libubus.h>
 
 /*program usage documentation*/
 static char doc[] = "Log daemon program. Connects to Tuya cloud service, sends and receives data.";

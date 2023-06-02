@@ -1,5 +1,7 @@
 #ifndef TUYA_UTILS_H
 #define TUYA_UTILS_H
+#include "tuyalink_core.h"
+#include "tuya_error_code.h"
 
 /*calls when messages are sent and received*/
 void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg);
@@ -10,7 +12,7 @@ int tuya_deinit();
 
 void action_handler(const tuyalink_message_t *msg);
 /*sends message to cloud*/
-int send_report(char* report);
+int send_report(const char* report);
 /*tuya loop wrapper*/
 int tuya_loop();
 int tuya_connect(int retries);

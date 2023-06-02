@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "tuya_utils.h"
 #include "ubus_utils.h"
+#include "lua_utils.h"
 
 int run = 1;
 
@@ -106,8 +107,6 @@ int write_to_file(char* parameter, char* message, char* filename)
     return 0;
 }
 
-
-
 void sig_handler(int signum)
 {
     if(signum == SIGTERM || signum == SIGINT){
@@ -136,6 +135,9 @@ int main_func(struct arguments arguments)
             return -1;
         }
     }
+
+    data_scripts_init();
+
     int ret;
     if((ret = ubus_start())){
         return ret;
@@ -153,13 +155,13 @@ int main_func(struct arguments arguments)
             syslog(LOG_ERR, "Cannot maintain connection");
             return ret;
         }
-        //report_uptime_data();
+        data_scripts_run(); 
     }
     
     /*disconnect device*/
     tuya_deinit();
     ubus_end();
-
+    data_scripts_cleanup();
     return 0;
 }
 

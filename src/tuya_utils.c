@@ -1,15 +1,13 @@
 #include <syslog.h>
-#include "tuyalink_core.h"
-#include "tuya_cacert.h"
-#include "tuya_error_code.h"
 #include "utils.h"
 #include "ubus_utils.h"
-#include <libubox/blobmsg_json.h>
-#include <libubus.h>
+#include "tuya_utils.h"
+#include "tuya_cacert.h"
+
 
 tuya_mqtt_context_t client_instance;
 
-int send_report(char* report)
+int send_report(const char* report)
 {
     /*send data to cloud*/
     int ret;

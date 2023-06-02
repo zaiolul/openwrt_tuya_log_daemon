@@ -1,5 +1,9 @@
 #ifndef DAEMON_UBUS_UTILS_H
 #define DAEMON_UBUS_UTILS_H
+
+#include <libubox/blobmsg_json.h>
+#include <libubus.h>
+#include "cJSON.h"
 void uptime_cb(struct ubus_request *req, int type, struct blob_attr *msg);
 /*device callback function*/
 void devices_cb(struct ubus_request *req, int type, struct blob_attr *msg);
