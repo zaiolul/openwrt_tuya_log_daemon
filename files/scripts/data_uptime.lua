@@ -24,4 +24,3 @@ function GetData()
     local status = conn:call("system", "info", {})
     return makeJsonString("uptime", tostring(status["uptime"]));
 end
-

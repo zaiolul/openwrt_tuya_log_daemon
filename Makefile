@@ -22,7 +22,7 @@ define Package/log_daemon/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_DIR) $(1)/etc/config
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/log_daemon $(1)/usr/bin
-	$(INSTALL_BIN) ./src/scripts/* $(1)/usr/bin/tuya_scripts
+	$(INSTALL_BIN) ./files/scripts/* $(1)/usr/bin/tuya_scripts
 	$(INSTALL_BIN) ./files/log_daemon.init $(1)/etc/init.d/log_daemon
 	$(INSTALL_CONF) ./files/log_daemon.config $(1)/etc/config/log_daemon
 

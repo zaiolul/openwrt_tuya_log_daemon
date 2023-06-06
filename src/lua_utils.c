@@ -93,10 +93,8 @@ int data_scripts_init()
             st = NULL;
             continue;
         }
-        if(check_global(&st, LUA_TFUNCTION, "Init") != 0 ||
-            check_global(&st, LUA_TFUNCTION, "Deinit") != 0 ||
-            check_global(&st, LUA_TFUNCTION, "GetData") != 0){
-            syslog(LOG_INFO, "Script %s must implement global Init, Deinit and GetData functions", full_path);
+        if(check_global(&st, LUA_TFUNCTION, "GetData") != 0){
+            syslog(LOG_INFO, "Script %s must implement GetData function", full_path);
             continue;
         }
 
@@ -107,8 +105,7 @@ int data_scripts_init()
 
         lua_getglobal(st, "Init");
         if (lua_pcall(st, 0, 0, 0) != 0){
-            syslog(LOG_INFO, "Error running function : %s", lua_tostring(st, -1));
-            continue;
+            syslog(LOG_INFO, "Error running function \"%s\": %s","Init", lua_tostring(st, -1));
         }
         lua_settop(st, 0);
         scripts[i].st = st;  
@@ -131,7 +128,7 @@ int data_scripts_run()
         
         lua_getglobal(scripts[i].st, "GetData");
         if (lua_pcall(scripts[i].st, 0, 1, 0) != 0){
-            syslog(LOG_INFO, "Error running function : %s", lua_tostring(scripts[i].st, -1));
+              syslog(LOG_INFO, "Error running function \"%s\": %s","GetData", lua_tostring(scripts[i].st, -1));
             continue;
         }
         const char* report = lua_tostring(scripts[i].st, -1);
@@ -147,7 +144,7 @@ int data_scripts_cleanup()
             continue;
         lua_getglobal(scripts[i].st, "Deinit");
         if (lua_pcall(scripts[i].st, 0, 0, 0) != 0){
-            syslog(LOG_INFO, "Error running function : %s", lua_tostring(scripts[i].st, -1));
+            syslog(LOG_INFO, "Error running function \"%s\": %s","Deinit", lua_tostring(scripts[i].st, -1));
         }
             
         lua_close(scripts[i].st);
