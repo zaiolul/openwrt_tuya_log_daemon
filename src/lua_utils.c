@@ -110,7 +110,7 @@ int data_scripts_init()
             syslog(LOG_INFO, "Error running function : %s", lua_tostring(st, -1));
             continue;
         }
-
+        lua_settop(st, 0);
         scripts[i].st = st;  
         scripts[i].timer = time_val;
         i ++;
@@ -148,7 +148,6 @@ int data_scripts_cleanup()
         lua_getglobal(scripts[i].st, "Deinit");
         if (lua_pcall(scripts[i].st, 0, 0, 0) != 0){
             syslog(LOG_INFO, "Error running function : %s", lua_tostring(scripts[i].st, -1));
-            continue;
         }
             
         lua_close(scripts[i].st);
