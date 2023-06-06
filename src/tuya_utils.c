@@ -11,7 +11,6 @@ int send_report(const char* report)
     /*send data to cloud*/
     cJSON_Parse(report);
     if(cJSON_GetErrorPtr()){
-         printf("%s is invalid json\n", report);
         return -1;
     }  
 
