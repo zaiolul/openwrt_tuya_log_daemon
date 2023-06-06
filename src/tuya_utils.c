@@ -4,12 +4,17 @@
 #include "tuya_utils.h"
 #include "tuya_cacert.h"
 
-
 tuya_mqtt_context_t client_instance;
 
 int send_report(const char* report)
 {
     /*send data to cloud*/
+    cJSON_Parse(report);
+    if(cJSON_GetErrorPtr()){
+         printf("%s is invalid json\n", report);
+        return -1;
+    }  
+
     int ret;
     if((ret = tuyalink_thing_property_report_with_ack(&client_instance, NULL, report)) == OPRT_INVALID_PARM){
         syslog(LOG_ERR, "Cannot send report");
