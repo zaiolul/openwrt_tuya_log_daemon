@@ -3,17 +3,20 @@
 #include "ubus_utils.h"
 #include "tuya_utils.h"
 #include "tuya_cacert.h"
+#include "lua_utils.h"
 
 tuya_mqtt_context_t client_instance;
 
-int send_report(const char* report)
+int send_report(char* report)
 {
     /*send data to cloud*/
     cJSON_Parse(report);
     if(cJSON_GetErrorPtr()){
+        printf("NOT VALID JSON:%s\n");
         return -1;
     }  
 
+    printf("sending report: %s\n", report);
     int ret;
     if((ret = tuyalink_thing_property_report_with_ack(&client_instance, NULL, report)) == OPRT_INVALID_PARM){
         syslog(LOG_ERR, "Cannot send report");
@@ -22,20 +25,25 @@ int send_report(const char* report)
     syslog(LOG_INFO, "Report message was sent succesfully");
     return OPRT_OK;
 }
+
 void action_handler(const tuyalink_message_t *msg)
 {
+    printf("data string: %s\n", msg->data_string);
     cJSON *json = cJSON_Parse(msg->data_string);
     cJSON *action = cJSON_GetObjectItemCaseSensitive(json, "actionCode");
-    syslog(LOG_INFO, "%s action received", action->valuestring); 
+    // syslog(LOG_INFO, "%s action received", action->valuestring); 
 
-    if(strcmp( action->valuestring, "get_devices") == 0){
-        report_device_data();
-    } else if(strcmp(action->valuestring, "change_state") == 0){
-        cJSON *params = cJSON_GetObjectItemCaseSensitive(json, "inputParams");
-        change_gpio_state(params);
-    }
+    // if(strcmp( action->valuestring, "espdevices_GetDevices") == 0){
+    //     report_device_data();
+    // if(strcmp(action->valuestring, "espdevices_ChangeState") == 0){
+    //     cJSON *params = cJSON_GetObjectItemCaseSensitive(json, "inputParams");
+    //     change_gpio_state(params);
+    // }
+     
+    execute_action(json);
     cJSON_free(json);
 }
+
 void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg)
 {
     switch (msg->type) {
@@ -55,6 +63,7 @@ void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_m
             break;
     }
 }
+
 int tuya_init(char *device_id, char *secret)
 {
     /* initialize the client */
@@ -78,6 +87,7 @@ int tuya_init(char *device_id, char *secret)
     }
     return OPRT_OK;
 }
+
 int tuya_connect(int retries)
 {
     int retry_count = 0;
@@ -97,6 +107,7 @@ int tuya_connect(int retries)
     }
     return OPRT_OK;
 }
+
 int tuya_start(char *device_id, char *secret)
 {   
     int ret;

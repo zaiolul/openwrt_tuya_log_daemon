@@ -190,7 +190,7 @@ int change_gpio_state(cJSON *input)
         return ret;
     }
     
-    sprintf(full_message, "{\"esp_response\":\"{\\\"response\\\":%d,\\\"msg\\\":\\\"%s\\\"}\"}",
+    sprintf(full_message, "{\\\"esp_response\\\":\"{\\\"response\\\":%d,\\\"msg\\\":\\\"%s\\\"}\\\"}",
         response.code, response.message);
     ret = send_report(full_message);
 

@@ -155,7 +155,7 @@ int main_func(struct arguments arguments)
             syslog(LOG_ERR, "Cannot maintain connection");
             return ret;
         }
-        data_scripts_run(); 
+        //data_scripts_run(); 
     }
     
     /*disconnect device*/

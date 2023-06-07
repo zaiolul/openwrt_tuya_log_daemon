@@ -5,6 +5,7 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <stdlib.h>
+#include "cJSON.h"
 
 #define SCRIPTS_FOLDER "/usr/bin/tuya_scripts"
 #define MAX_SCRIPTS 20
@@ -12,4 +13,5 @@
 int data_scripts_init();
 int data_scripts_run();
 int data_scripts_cleanup();
+int execute_action(cJSON *json);
 #endif

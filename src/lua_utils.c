@@ -103,11 +103,8 @@ int data_scripts_init()
             time_val = (int)lua_tonumber(st, -1);
         }
 
-        lua_getglobal(st, "Init");
-        if (lua_pcall(st, 0, 0, 0) != 0){
-            syslog(LOG_INFO, "Error running function \"%s\": %s","Init", lua_tostring(st, -1));
-        }
-        lua_settop(st, 0);
+        lua_do_function_no_arg(&st, "Init");
+
         scripts[i].st = st;  
         scripts[i].timer = time_val;
         i ++;
@@ -131,10 +128,25 @@ int data_scripts_run()
               syslog(LOG_INFO, "Error running function \"%s\": %s","GetData", lua_tostring(scripts[i].st, -1));
             continue;
         }
-        const char* report = lua_tostring(scripts[i].st, -1);
+
+        char* report = lua_tostring(scripts[i].st, -1);
         send_report(report);
         lua_pop(scripts[i].st, -1);
     }
+}
+int lua_do_function_no_arg(lua_State **st, char *function)
+{
+    if(check_global(st, LUA_TFUNCTION, function) != 0){
+        syslog(LOG_INFO, "No function detected %s", function);
+        lua_close(*st);
+        return -1;
+    }
+    if (lua_pcall(*st, 0, 0, 0) != 0){
+        syslog(LOG_INFO, "Error running function \"%s\": %s",function,
+            lua_tostring(*st, -1));
+        return -1;
+    }
+    return 0;
 }
 
 int data_scripts_cleanup()
@@ -151,6 +163,96 @@ int data_scripts_cleanup()
     }
 }
 
+int get_action_parts(const char *str, char* file, char* function, char* sep)
+{
+    char buf[strlen(str) + 1];
+    buf[strlen(str)] = '\0';
+    strncpy(buf, str, sizeof(buf));
+
+    char* token = strtok(buf, sep);
+    //printf("token 1: %s\n", token);
+    if(!token)
+        return -1;
+    strncpy(file, token, strlen(token));
+
+    token = strtok(NULL, sep);
+    // printf("token 2: %s\n", token);
+    strncpy(function, token, strlen(token));
+    return 0;
+}
+
+void push_table(lua_State *st, cJSON *obj){
+    lua_pushstring(st, obj->string);
+    !obj->valuestring ? lua_pushnumber(st, obj->valuedouble) : lua_pushstring(st, obj->valuestring);
+    lua_settable(st, -3); 
+}
+
+int make_table(lua_State *st, cJSON* json)
+{
+    cJSON* c = json->child; // inputParams
+    lua_newtable(st);
+    lua_pushstring(st, c->string);
+    lua_newtable(st);
+
+    cJSON* args = c->child;
+    while(args){
+        push_table(st, args);
+        args = args->next;
+    }
+    lua_settable(st, -3);
+
+    c = c->next;
+    push_table(st, c);
+    return 0;  
+}
+
+int execute_action(cJSON *json)
+{    
+    cJSON *action = cJSON_GetObjectItemCaseSensitive(json, "actionCode");
+
+    char file[100] = {0};
+    char function[100] = {0};
+
+    get_action_parts(action->valuestring, file, function, "_");
+    //printf("FILE: %s, FUNCTION: %s\n", file, function);
+    char full_path[256];
+    sprintf(full_path, "%s/%s.lua", SCRIPTS_FOLDER, file);
+    //printf("full file path: %s\n", full_path);
+    lua_State *st = luaL_newstate();
+    luaL_openlibs(st);
+
+    int ret = luaL_dofile(st, full_path);
+    if(ret != 0){
+        syslog(LOG_INFO, "Can't open action script: %s", full_path);
+        lua_close(st);
+        return ret;
+    }
+
+    if(check_global(&st, LUA_TFUNCTION, function) != 0){
+        syslog(LOG_INFO, "No function detected %s:%s", full_path, function);
+        lua_close(st);
+        return -1;
+    }
+
+    lua_do_function_no_arg(&st, "Init");
+
+    make_table(st, json);
+    if (lua_pcall(st, 1, 1, 0) != 0){
+        syslog(LOG_INFO, "Error running function \"%s\": %s",function,
+            lua_tostring(st, -1));
+        lua_do_function_no_arg(&st, "Deinit");
+        lua_close(st);
+        return -1;
+    }
+    char* return_string = lua_tostring(st, -1);
+    send_report(return_string);
+    lua_do_function_no_arg(&st, "Deinit");
+    lua_close(st);
+    
+    
+    //printf("returned from function: %s\n", return_string);
+    return 0;
+}
 
 
 
