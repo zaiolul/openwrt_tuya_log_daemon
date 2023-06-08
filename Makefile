@@ -9,7 +9,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/log_daemon
 	CATEGORY:=Examples
 	TITLE:=log_daemon
-	DEPENDS:= +tuya-sdk +libubus +libubox +libblobmsg-json +liblua5.1 +lua
+	DEPENDS:= +tuya-sdk +libblobmsg-json +liblua5.1 +lua
 endef
 
 define Package/log_daemon/description

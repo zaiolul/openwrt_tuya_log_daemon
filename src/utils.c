@@ -10,8 +10,9 @@
 #include <argp.h>
 #include "utils.h"
 #include "tuya_utils.h"
-#include "ubus_utils.h"
 #include "lua_utils.h"
+#include <signal.h>
+
 
 int run = 1;
 
@@ -136,12 +137,11 @@ int main_func(struct arguments arguments)
         }
     }
 
-    data_scripts_init();
+    if(data_scripts_init() == 0){
+        syslog(LOG_NOTICE, "No scripts were added.");
+    }
 
     int ret;
-    if((ret = ubus_start())){
-        return ret;
-    }
     
     if((ret = tuya_start( arguments.device_id, arguments.secret)) != 0){
         tuya_deinit();
@@ -160,7 +160,6 @@ int main_func(struct arguments arguments)
     
     /*disconnect device*/
     tuya_deinit();
-    ubus_end();
     data_scripts_cleanup();
     return 0;
 }

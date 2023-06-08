@@ -58,10 +58,23 @@ int check_global(lua_State **st, int type, const char *g)
     return 0;
 }
 
+int lua_do_function_no_arg(lua_State **st, char *function)
+{
+    if(check_global(st, LUA_TFUNCTION, function) != 0){
+        syslog(LOG_WARNING, "No function detected %s", function);
+        lua_close(*st);
+        return -1;
+    } else if (lua_pcall(*st, 0, 0, 0) != 0){
+        syslog(LOG_WARNING, "Error running function \"%s\": %s",function,
+            lua_tostring(*st, -1));
+        return -1;
+    }
+    return 0;
+}
+
 int data_scripts_init()
 {
     char full_path[256];
-    //strncpy(full_path, path, sizeof(full_path));
     DIR* dir = opendir(SCRIPTS_FOLDER);
     if(!dir){
         syslog(LOG_ERR, "Can't find or open Lua script folder");
@@ -74,7 +87,7 @@ int data_scripts_init()
     while((ent = readdir(dir))){
 
         if(i == MAX_SCRIPTS){
-            syslog(LOG_INFO, "Reached max lua data script count.");
+            syslog(LOG_NOTICE, "Reached max lua data script count.");
             break;
         }    
         if(ent->d_type != DT_REG)
@@ -88,13 +101,13 @@ int data_scripts_init()
         st = luaL_newstate();
         luaL_openlibs(st);
         if(luaL_dofile(st, full_path) != 0){
-            syslog(LOG_INFO, "Error opening script: %s", full_path);
+            syslog(LOG_WARNING, "Error opening script: %s", full_path);
             lua_close(st);
             st = NULL;
             continue;
         }
         if(check_global(&st, LUA_TFUNCTION, "GetData") != 0){
-            syslog(LOG_INFO, "Script %s must implement GetData function", full_path);
+            syslog(LOG_WARNING, "Script %s must implement GetData function", full_path);
             continue;
         }
 
@@ -112,71 +125,18 @@ int data_scripts_init()
     return i;
 }
 
-int data_scripts_run()
-{
-    for(int i = 0; i < MAX_SCRIPTS; i ++){
-      
-        if(!scripts[i].st)
-            continue;
-        time_t current = time(NULL);
-        if(current - scripts[i].previous_time < scripts[i].timer)
-            continue;
-        scripts[i].previous_time = current;
-        
-        lua_getglobal(scripts[i].st, "GetData");
-        if (lua_pcall(scripts[i].st, 0, 1, 0) != 0){
-              syslog(LOG_INFO, "Error running function \"%s\": %s","GetData", lua_tostring(scripts[i].st, -1));
-            continue;
-        }
-
-        char* report = lua_tostring(scripts[i].st, -1);
-        send_report(report);
-        lua_pop(scripts[i].st, -1);
-    }
-}
-int lua_do_function_no_arg(lua_State **st, char *function)
-{
-    if(check_global(st, LUA_TFUNCTION, function) != 0){
-        syslog(LOG_INFO, "No function detected %s", function);
-        lua_close(*st);
-        return -1;
-    }
-    if (lua_pcall(*st, 0, 0, 0) != 0){
-        syslog(LOG_INFO, "Error running function \"%s\": %s",function,
-            lua_tostring(*st, -1));
-        return -1;
-    }
-    return 0;
-}
-
-int data_scripts_cleanup()
-{
-    for(int i = 0; i < MAX_SCRIPTS; i ++){
-        if(!scripts[i].st)
-            continue;
-        lua_getglobal(scripts[i].st, "Deinit");
-        if (lua_pcall(scripts[i].st, 0, 0, 0) != 0){
-            syslog(LOG_INFO, "Error running function \"%s\": %s","Deinit", lua_tostring(scripts[i].st, -1));
-        }
-            
-        lua_close(scripts[i].st);
-    }
-}
-
 int get_action_parts(const char *str, char* file, char* function, char* sep)
 {
     char buf[strlen(str) + 1];
     buf[strlen(str)] = '\0';
     strncpy(buf, str, sizeof(buf));
-
     char* token = strtok(buf, sep);
-    //printf("token 1: %s\n", token);
+
     if(!token)
         return -1;
-    strncpy(file, token, strlen(token));
 
+    strncpy(file, token, strlen(token));
     token = strtok(NULL, sep);
-    // printf("token 2: %s\n", token);
     strncpy(function, token, strlen(token));
     return 0;
 }
@@ -244,16 +204,42 @@ int execute_action(cJSON *json)
         lua_close(st);
         return -1;
     }
-    char* return_string = lua_tostring(st, -1);
+    const char* return_string = lua_tostring(st, -1);
     send_report(return_string);
+
     lua_do_function_no_arg(&st, "Deinit");
     lua_close(st);
-    
-    
-    //printf("returned from function: %s\n", return_string);
     return 0;
 }
 
+int data_scripts_run()
+{
+    for(int i = 0; i < MAX_SCRIPTS; i ++){
+        if(!scripts[i].st)
+            continue;
+        time_t current = time(NULL);
+        if(current - scripts[i].previous_time < scripts[i].timer)
+            continue;
+        scripts[i].previous_time = current;
+        
+        lua_getglobal(scripts[i].st, "GetData");
+        if (lua_pcall(scripts[i].st, 0, 1, 0) != 0){
+              syslog(LOG_WARNING, "Error running function \"%s\": %s","GetData", lua_tostring(scripts[i].st, -1));
+            continue;
+        }
 
+        const char* report = lua_tostring(scripts[i].st, -1);
+        send_report(report);
+        lua_pop(scripts[i].st, -1);
+    }
+}
 
-
+int data_scripts_cleanup()
+{
+    for(int i = 0; i < MAX_SCRIPTS; i ++){
+        if(!scripts[i].st)
+            continue;
+        lua_do_function_no_arg(&(scripts[i].st), "Deinit");
+        lua_close(scripts[i].st);
+    }
+}

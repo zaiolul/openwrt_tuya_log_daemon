@@ -13,7 +13,7 @@ int tuya_deinit();
 
 void action_handler(const tuyalink_message_t *msg);
 /*sends message to cloud*/
-int send_report(char* report);
+int send_report(const char* report);
 /*tuya loop wrapper*/
 int tuya_loop();
 int tuya_connect(int retries);
