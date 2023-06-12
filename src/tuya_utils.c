@@ -27,12 +27,7 @@ int send_report(const char* report)
 
 void action_handler(const tuyalink_message_t *msg)
 {
-    
-    cJSON *json = cJSON_Parse(msg->data_string);
-  
-     
-    execute_action(json);
-    cJSON_free(json);
+    execute_action(msg->data_string); 
 }
 
 void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg)

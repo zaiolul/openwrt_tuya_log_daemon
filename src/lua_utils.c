@@ -9,6 +9,7 @@
 #include "tuya_utils.h"
 #include <time.h>
 #include "cJSON.h"
+#include "file_utils.h"
 
 #define DEFAULT_TIMER 5
 
@@ -20,22 +21,6 @@ struct script_data{
 
 struct script_data scripts[MAX_SCRIPTS] = {0};
 
-int check_file_ending(char *filename, char *expected_ending)
-{
-    char buf[strlen(filename) + 1];
-    buf[strlen(filename)] = '\0';
-
-    strncpy(buf, filename, sizeof(buf));
-    char* token = strtok(buf, ".");
-    char last_token[256];
-
-    while(token){
-        token = strtok(NULL, ".");
-        if(token)
-            strcpy(last_token, token);
-    }
-    return strcmp(last_token, expected_ending);
-}
 
 int check_global(lua_State **st, int type, const char *g)
 {
@@ -125,21 +110,7 @@ int data_scripts_init()
     return i;
 }
 
-int get_action_parts(const char *str, char* file, char* function, char* sep)
-{
-    char buf[strlen(str) + 1];
-    buf[strlen(str)] = '\0';
-    strncpy(buf, str, sizeof(buf));
-    char* token = strtok(buf, sep);
 
-    if(!token)
-        return -1;
-
-    strncpy(file, token, strlen(token));
-    token = strtok(NULL, sep);
-    strncpy(function, token, strlen(token));
-    return 0;
-}
 
 void push_table(lua_State *st, cJSON *obj){
     lua_pushstring(st, obj->string);
@@ -166,18 +137,26 @@ int make_table(lua_State *st, cJSON* json)
     return 0;  
 }
 
-int execute_action(cJSON *json)
+int execute_action(char *payload)
 {    
+    cJSON *json = cJSON_Parse(payload);
     cJSON *action = cJSON_GetObjectItemCaseSensitive(json, "actionCode");
 
-    char file[100] = {0};
-    char function[100] = {0};
+    char **parts = NULL;
+    int part_count = get_string_parts(action->valuestring, "_", &parts);
 
-    get_action_parts(action->valuestring, file, function, "_");
-    //printf("FILE: %s, FUNCTION: %s\n", file, function);
+    if(part_count != 2){
+        syslog(LOG_WARNING, "Bad input action name format. (file_function)");
+        free_string_array(&parts, part_count);
+        cJSON_free(json);
+    }
+
+    char *file = parts[0];
+    char *function = parts[1];
+
     char full_path[256];
     sprintf(full_path, "%s/%s.lua", SCRIPTS_FOLDER, file);
-    //printf("full file path: %s\n", full_path);
+
     lua_State *st = luaL_newstate();
     luaL_openlibs(st);
 
@@ -209,6 +188,9 @@ int execute_action(cJSON *json)
 
     lua_do_function_no_arg(&st, "Deinit");
     lua_close(st);
+
+    free_string_array(&parts, part_count);
+    cJSON_free(json);
     return 0;
 }
 

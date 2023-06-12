@@ -84,30 +84,6 @@ int daemonize()
     return 0;
 }
 
-int write_to_file(char* parameter, char* message, char* filename)
-{
-    cJSON *json = cJSON_Parse(message);
-    char* value = json->child->valuestring;
-    char* param = json->child->string;
-
-    if(strcmp(param, parameter) == 0){
-        FILE* fptr = fopen(filename, "a");
-        if(fptr == NULL){
-            syslog(LOG_ERR, "Cannot open file for writing");
-            return -1;
-        }
-        else{
-            time_t seconds;
-            time(&seconds);
-
-            fprintf(fptr, "Timestamp: %ld, value: %s\n",seconds, value);
-            fclose(fptr);
-        }
-    }
-    cJSON_Delete(json);
-    return 0;
-}
-
 void sig_handler(int signum)
 {
     if(signum == SIGTERM || signum == SIGINT){
