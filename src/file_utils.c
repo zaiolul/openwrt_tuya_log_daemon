@@ -52,11 +52,13 @@ int get_string_parts(const char *str, char *sep, char ***arr)
     if(!str){
         return -1;
     }
+
     char **parts = NULL;
     char buf[strlen(str) + 1];
+
     buf[strlen(str)] = '\0';
-    //int base_size = s
     strncpy(buf, str, sizeof(buf));
+
     char* token = strtok(buf, sep);
     int count = 0;
     while(token){
@@ -64,12 +66,14 @@ int get_string_parts(const char *str, char *sep, char ***arr)
         if(!parts){
             return -1;
         }
-        parts[count - 1] = malloc(strlen(token) * sizeof(char));
+        parts[count - 1] = malloc(strlen(token) * sizeof(char) + 1);
 
         if(!parts[count - 1]){
             return -1;
         }
+         
         strncpy(parts[count - 1], token, strlen(token));
+        parts[count - 1][strlen(token)] = '\0';
         token = strtok(NULL, sep);
     }
     *arr = parts;

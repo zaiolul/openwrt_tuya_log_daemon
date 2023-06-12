@@ -141,6 +141,7 @@ int execute_action(char *payload)
 {    
     cJSON *json = cJSON_Parse(payload);
     cJSON *action = cJSON_GetObjectItemCaseSensitive(json, "actionCode");
+    printf("ACTION: %s\n", action->valuestring);
 
     char **parts = NULL;
     int part_count = get_string_parts(action->valuestring, "_", &parts);
